@@ -1,33 +1,142 @@
-import { forwardRef } from 'react'
+import { forwardRef, useCallback, useEffect, useRef, useState } from 'react'
 
 const projects = [
   {
     title: 'Lucia Mar Studio',
-    category: 'Wedding photography',
-    image:
+    subtitle: 'Destination Wedding Portfolio',
+    description:
+      'A polished showcase for a wedding photographer built around immersive galleries, editorial pacing, and premium inquiry moments.',
+    accent: '#c7a47d',
+    imageUrl:
       'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=80',
-    summary:
-      'A refined portfolio built to highlight destination weddings with immersive galleries, elegant pacing, and inquiry-first navigation.',
+    href: 'https://example.com/lucia-mar-studio',
+    titleClassName: 'projects-carousel-title-lucia',
   },
   {
-    title: 'Mateo Lens Archive',
-    category: 'Editorial portraiture',
-    image:
+    title: 'Atlas Portrait House',
+    subtitle: 'Editorial Photographer Website',
+    description:
+      'A moody portrait portfolio with curated case studies, press-ready storytelling, and a cinematic rhythm across every section.',
+    accent: '#8ba7b8',
+    imageUrl:
       'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1200&q=80',
-    summary:
-      'A minimalist photographer portfolio focused on portrait stories, published series, and a strong art-direction sensibility.',
+    href: 'https://example.com/atlas-portrait-house',
+    titleClassName: 'projects-carousel-title-atlas',
   },
   {
-    title: 'Isla Norte Frames',
-    category: 'Travel photography',
-    image:
+    title: 'Solstice Travel Notes',
+    subtitle: 'Adventure Photo Journal',
+    description:
+      'A travel photography concept with large-format landscapes, layered collections, and a quieter interface that lets the imagery lead.',
+    accent: '#7ea08c',
+    imageUrl:
       'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
-    summary:
-      'A cinematic showcase for travel and landscape work, designed around large visuals, quiet typography, and curated collections.',
+    href: 'https://example.com/solstice-travel-notes',
+    titleClassName: 'projects-carousel-title-solstice',
+  },
+  {
+    title: 'Nocturne Frames',
+    subtitle: 'Fashion Campaign Archive',
+    description:
+      'A sleek portfolio direction for fashion and studio work, balancing art-direction, campaign presentation, and selective project narratives.',
+    accent: '#d4a466',
+    imageUrl:
+      'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1200&q=80',
+    href: 'https://example.com/nocturne-frames',
+    titleClassName: 'projects-carousel-title-nocturne',
   },
 ]
 
+const SLIDE_DURATION = 6000
+const TRANSITION_DURATION = 800
+
 export const ProjectsSection = forwardRef(function ProjectsSection(_, ref) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
+  const intervalRef = useRef(null)
+  const progressRef = useRef(null)
+  const transitionRef = useRef(null)
+  const touchStartX = useRef(0)
+  const touchEndX = useRef(0)
+
+  const goToSlide = useCallback(
+    (index) => {
+      if (isTransitioning || index === currentIndex) return
+
+      setIsTransitioning(true)
+      setProgress(0)
+      window.clearTimeout(transitionRef.current)
+
+      transitionRef.current = window.setTimeout(() => {
+        setCurrentIndex(index)
+        window.setTimeout(() => {
+          setIsTransitioning(false)
+        }, 60)
+      }, TRANSITION_DURATION / 2)
+    },
+    [currentIndex, isTransitioning],
+  )
+
+  const goNext = useCallback(() => {
+    const nextIndex = (currentIndex + 1) % projects.length
+    goToSlide(nextIndex)
+  }, [currentIndex, goToSlide])
+
+  const goPrev = useCallback(() => {
+    const prevIndex = (currentIndex - 1 + projects.length) % projects.length
+    goToSlide(prevIndex)
+  }, [currentIndex, goToSlide])
+
+  useEffect(() => {
+    if (isPaused) return undefined
+
+    progressRef.current = window.setInterval(() => {
+      setProgress((previous) => {
+        if (previous >= 100) return 100
+        return previous + 100 / (SLIDE_DURATION / 50)
+      })
+    }, 50)
+
+    intervalRef.current = window.setInterval(goNext, SLIDE_DURATION)
+
+    return () => {
+      window.clearInterval(intervalRef.current)
+      window.clearInterval(progressRef.current)
+    }
+  }, [currentIndex, goNext, isPaused])
+
+  useEffect(() => {
+    return () => {
+      window.clearInterval(intervalRef.current)
+      window.clearInterval(progressRef.current)
+      window.clearTimeout(transitionRef.current)
+    }
+  }, [])
+
+  const handleTouchStart = (event) => {
+    touchStartX.current = event.targetTouches[0].clientX
+  }
+
+  const handleTouchMove = (event) => {
+    touchEndX.current = event.targetTouches[0].clientX
+  }
+
+  const handleTouchEnd = () => {
+    const difference = touchStartX.current - touchEndX.current
+
+    if (Math.abs(difference) <= 60) return
+
+    if (difference > 0) {
+      goNext()
+    } else {
+      goPrev()
+    }
+  }
+
+  const currentProject = projects[currentIndex]
+
   return (
     <section ref={ref} id="projects" className="projects-section section-frame snap-start">
       <div className="projects-section-inner section-inner">
@@ -39,30 +148,153 @@ export const ProjectsSection = forwardRef(function ProjectsSection(_, ref) {
             </div>
           </div>
 
-          <div className="projects-list" role="list" aria-label="Selected projects">
-            {projects.map((project) => (
-              <a key={project.title} href="#contact" className="project-row" role="listitem">
-                <div className="project-hover-preview" aria-hidden="true">
-                  <div className="project-hover-preview-frame">
+          <div
+            className="projects-carousel"
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <div
+              className="projects-carousel-bg-wash"
+              style={{
+                background: `radial-gradient(circle at 72% 50%, ${currentProject.accent}16 0%, transparent 62%)`,
+              }}
+            />
+
+            <div className="projects-carousel-shell">
+              <div className="projects-carousel-copy">
+                <div
+                  className={`projects-carousel-count ${
+                    isTransitioning ? 'projects-carousel-transitioning' : 'projects-carousel-visible'
+                  }`}
+                >
+                  <span className="projects-carousel-count-line" />
+                  <span className="projects-carousel-count-text">
+                    {String(currentIndex + 1).padStart(2, '0')} /{' '}
+                    {String(projects.length).padStart(2, '0')}
+                  </span>
+                </div>
+
+                <h3
+                  className={`projects-carousel-title ${currentProject.titleClassName} ${
+                    isTransitioning ? 'projects-carousel-transitioning' : 'projects-carousel-visible'
+                  }`}
+                >
+                  {currentProject.title}
+                </h3>
+
+                <p
+                  className={`projects-carousel-subtitle ${
+                    isTransitioning ? 'projects-carousel-transitioning' : 'projects-carousel-visible'
+                  }`}
+                  style={{ color: currentProject.accent }}
+                >
+                  {currentProject.subtitle}
+                </p>
+
+                <p
+                  className={`projects-carousel-description ${
+                    isTransitioning ? 'projects-carousel-transitioning' : 'projects-carousel-visible'
+                  }`}
+                >
+                  {currentProject.description}
+                </p>
+
+                <div className="projects-carousel-nav">
+                  <button type="button" onClick={goPrev} aria-label="Previous project">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <button type="button" onClick={goNext} aria-label="Next project">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div className="projects-carousel-visual">
+                <div
+                  className={`projects-carousel-image-frame ${
+                    isTransitioning ? 'projects-carousel-transitioning' : 'projects-carousel-visible'
+                  }`}
+                >
+                  <a
+                    href={currentProject.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="projects-carousel-image-link"
+                    aria-label={`Open ${currentProject.title} website`}
+                  >
                     <img
-                      src={project.image}
-                      alt=""
-                      className="project-hover-preview-image"
+                      key={currentProject.title}
+                      src={currentProject.imageUrl}
+                      alt={currentProject.title}
+                      className="projects-carousel-image"
                     />
-                    <span className="project-hover-preview-button">View</span>
+                    <div
+                      className="projects-carousel-image-overlay"
+                      style={{
+                        background: `linear-gradient(135deg, ${currentProject.accent}22 0%, transparent 52%)`,
+                      }}
+                    />
+                    <div className="projects-carousel-image-hover">
+                      <span>Visit site</span>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M7 17L17 7M9 7h8v8" />
+                      </svg>
+                    </div>
+                  </a>
+                </div>
+
+                <div
+                  className="projects-carousel-frame-corner projects-carousel-frame-corner-tl"
+                  style={{ borderColor: currentProject.accent }}
+                />
+                <div
+                  className="projects-carousel-frame-corner projects-carousel-frame-corner-br"
+                  style={{ borderColor: currentProject.accent }}
+                />
+              </div>
+            </div>
+
+            <div className="projects-carousel-progress">
+              {projects.map((project, index) => (
+                <button
+                  key={project.title}
+                  type="button"
+                  onClick={() => goToSlide(index)}
+                  className={`projects-carousel-progress-item ${
+                    index === currentIndex ? 'projects-carousel-progress-item-active' : ''
+                  }`}
+                  aria-label={`Go to project ${index + 1}`}
+                >
+                  <div className="projects-carousel-progress-track">
+                    <div
+                      className="projects-carousel-progress-fill"
+                      style={{
+                        width:
+                          index === currentIndex
+                            ? `${progress}%`
+                            : index < currentIndex
+                              ? '100%'
+                              : '0%',
+                        backgroundColor:
+                          index === currentIndex
+                            ? currentProject.accent
+                            : index < currentIndex
+                              ? 'rgba(248, 250, 252, 0.78)'
+                              : 'transparent',
+                      }}
+                    />
                   </div>
-                </div>
-
-                <div className="project-row-main">
-                  <h3>{project.title}</h3>
-                  <p>{project.summary}</p>
-                </div>
-
-                <div className="project-row-meta">
-                  <span>{project.category}</span>
-                </div>
-              </a>
-            ))}
+                  <span className="projects-carousel-progress-label">{project.title}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
