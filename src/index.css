@@ -304,7 +304,7 @@ html.site-menu-open .app-stage {
   color: #0f172a;
 }
 
-.site-header-on-dark:not(:has(.site-header-dropdown)) {
+.site-header-on-dark {
   color: #ffffff;
 }
 
@@ -386,6 +386,7 @@ html.site-menu-open .app-stage {
   border: 0;
   border-radius: 0;
   background: transparent;
+  color: inherit;
   cursor: pointer;
   box-shadow: none;
   backdrop-filter: none;
@@ -1060,6 +1061,37 @@ html.site-menu-open .app-stage {
   display: grid;
   gap: clamp(1rem, 2vw, 1.5rem);
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.services-mobile-carousel {
+  display: grid;
+  gap: 1rem;
+}
+
+.services-card-slide {
+  min-width: 0;
+}
+
+.services-mobile-dots {
+  display: none;
+}
+
+.services-mobile-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.22);
+  padding: 0;
+  transition:
+    transform 220ms ease,
+    background-color 220ms ease,
+    opacity 220ms ease;
+}
+
+.services-mobile-dot-active {
+  background: #60a5fa;
+  transform: scale(1.2);
 }
 
 .service-card {
@@ -2137,18 +2169,63 @@ html.site-menu-open .app-stage {
 }
 
 @media (max-width: 1023px) {
+  .app-shell {
+    overflow: visible;
+  }
+
+  .app-stage {
+    min-height: auto;
+  }
+
+  .snap-container {
+    height: auto;
+    overflow: visible;
+    scroll-snap-type: none;
+    overscroll-behavior-y: auto;
+  }
+
   html.site-menu-open .app-stage {
     transform: none;
     border-radius: 0;
     box-shadow: none;
   }
 
-  .snap-container {
-    scroll-snap-type: y proximity;
+  html.site-menu-open .snap-container {
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  .section-frame {
+    height: auto;
+    min-height: auto;
   }
 
   .section-inner {
-    min-height: 100vh;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  #hero.section-frame {
+    min-height: 100svh;
+  }
+
+  #hero .section-inner {
+    min-height: 100svh;
+  }
+
+  #hero .hero-shader-wrap {
+    min-height: 100svh;
+  }
+
+  #hero .hero-layout.content-wrap {
+    min-height: 100svh;
+    padding-top: clamp(4.75rem, 10vh, 6.5rem);
+    padding-bottom: clamp(1.5rem, 5vh, 2.75rem);
+  }
+
+  #hero .hero-content-grid {
+    flex: 1 1 auto;
+    align-items: flex-end;
   }
 
   .hero-layout.content-wrap {
@@ -2170,7 +2247,7 @@ html.site-menu-open .app-stage {
 
   .services-section-dark .section-inner {
     justify-content: flex-start;
-    overflow-y: auto;
+    overflow: visible;
   }
 
   .services-section-dark .content-wrap {
@@ -2198,7 +2275,34 @@ html.site-menu-open .app-stage {
   }
 
   .services-card-grid {
-    grid-template-columns: 1fr;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(82vw, 82vw);
+    grid-template-columns: none;
+    gap: 1rem;
+    overflow-x: auto;
+    overflow-y: visible;
+    padding: 0 1rem 0.35rem;
+    margin: 0 -1rem;
+    scroll-snap-type: x mandatory;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .services-card-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .services-card-slide {
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+  }
+
+  .services-mobile-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
   }
 
   .service-card {
@@ -2262,6 +2366,11 @@ html.site-menu-open .app-stage {
 
   .site-header-logo {
     display: inline-flex;
+  }
+
+  .site-header-menu-wrap {
+    display: block;
+    justify-self: end;
   }
 
   .site-header-hero .site-header-menu-wrap {
@@ -2340,7 +2449,7 @@ html.site-menu-open .app-stage {
 
   .process-inner {
     align-items: flex-start;
-    overflow: auto;
+    overflow: visible;
     padding: 5.25rem 0 2rem;
   }
 
@@ -2373,7 +2482,7 @@ html.site-menu-open .app-stage {
 
   .projects-section-inner {
     justify-content: flex-start;
-    overflow-y: auto;
+    overflow: visible;
   }
 
   .projects-content-wrap {
@@ -2423,7 +2532,7 @@ html.site-menu-open .app-stage {
 
   .contact-section-inner {
     justify-content: flex-start;
-    overflow-y: auto;
+    overflow: visible;
   }
 
   .contact-layout.content-wrap {

@@ -8,6 +8,7 @@ export function useViewportScroll(containerRef, sectionIds, sectionRefs) {
     const container = containerRef.current
 
     if (!container) return
+    if (window.matchMedia('(max-width: 1023px)').matches) return
 
     const getSections = () =>
       sectionIds.map((id) => sectionRefs.current[id]).filter(Boolean)

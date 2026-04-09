@@ -71,6 +71,27 @@ function App() {
     if (!container) return undefined
 
     const updateActiveSection = () => {
+      const isMobile = window.matchMedia('(max-width: 1023px)').matches
+
+      if (isMobile) {
+        const headerOffset = 108
+        let currentId = sections[0]?.id ?? 'hero'
+
+        sections.forEach((section) => {
+          const node = refs.current[section.id]
+          if (!node) return
+
+          const rect = node.getBoundingClientRect()
+
+          if (rect.top <= headerOffset && rect.bottom > headerOffset) {
+            currentId = section.id
+          }
+        })
+
+        setActiveSection(currentId)
+        return
+      }
+
       const viewportCenter = window.innerHeight / 2
       let closestId = 'hero'
       let closestDistance = Number.POSITIVE_INFINITY
@@ -93,10 +114,12 @@ function App() {
 
     updateActiveSection()
     container.addEventListener('scroll', updateActiveSection, { passive: true })
+    window.addEventListener('scroll', updateActiveSection, { passive: true })
     window.addEventListener('resize', updateActiveSection)
 
     return () => {
       container.removeEventListener('scroll', updateActiveSection)
+      window.removeEventListener('scroll', updateActiveSection)
       window.removeEventListener('resize', updateActiveSection)
     }
   }, [isLegalPage])
