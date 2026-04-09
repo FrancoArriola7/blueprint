@@ -10,6 +10,7 @@ import { PrivacyPolicyPage } from './sections/PrivacyPolicyPage'
 import { useViewportScroll } from './hooks/useViewportScroll'
 import { SiteHeader } from './components/SiteHeader'
 import { CustomCursor } from './components/CustomCursor'
+import { CookieConsent } from './components/CookieConsent'
 
 const sections = [
   { id: 'hero', label: 'Intro' },
@@ -127,6 +128,7 @@ function App() {
   return (
     <div className="app-shell relative min-h-screen bg-[var(--color-bg)] text-slate-900">
       <CustomCursor />
+      <CookieConsent onOpenCookiePolicy={() => navigateToPath('/cookie-policy')} />
       {isCookiePolicyPage ? (
         <CookiePolicyPage
           pathname={pathname}

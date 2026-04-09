@@ -51,21 +51,41 @@ const SLIDE_DURATION = 6000
 const TRANSITION_DURATION = 800
 
 export const ProjectsSection = forwardRef(function ProjectsSection(_, ref) {
+  const sectionRef = useRef(null)
+  const autoAdvanceRef = useRef(null)
+  const hasActivatedRef = useRef(false)
+  const progressValueRef = useRef(0)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [progress, setProgress] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
-  const intervalRef = useRef(null)
+  const [isSectionVisible, setIsSectionVisible] = useState(false)
   const progressRef = useRef(null)
   const transitionRef = useRef(null)
   const touchStartX = useRef(0)
   const touchEndX = useRef(0)
 
+  const setSectionRef = useCallback(
+    (node) => {
+      sectionRef.current = node
+
+      if (typeof ref === 'function') {
+        ref(node)
+      } else if (ref) {
+        ref.current = node
+      }
+    },
+    [ref],
+  )
+
   const goToSlide = useCallback(
     (index) => {
       if (isTransitioning || index === currentIndex) return
 
+      window.clearInterval(progressRef.current)
+      window.clearTimeout(autoAdvanceRef.current)
       setIsTransitioning(true)
+      progressValueRef.current = 0
       setProgress(0)
       window.clearTimeout(transitionRef.current)
 
@@ -90,27 +110,59 @@ export const ProjectsSection = forwardRef(function ProjectsSection(_, ref) {
   }, [currentIndex, goToSlide])
 
   useEffect(() => {
-    if (isPaused) return undefined
+    window.clearInterval(progressRef.current)
+    window.clearTimeout(autoAdvanceRef.current)
+
+    if (isPaused || !isSectionVisible) return undefined
 
     progressRef.current = window.setInterval(() => {
-      setProgress((previous) => {
-        if (previous >= 100) return 100
-        return previous + 100 / (SLIDE_DURATION / 50)
+      setProgress((current) => {
+        const next = Math.min(current + 100 / (SLIDE_DURATION / 50), 100)
+        progressValueRef.current = next
+        return next
       })
     }, 50)
 
-    intervalRef.current = window.setInterval(goNext, SLIDE_DURATION)
+    autoAdvanceRef.current = window.setTimeout(
+      goNext,
+      Math.max(0, SLIDE_DURATION * (1 - progressValueRef.current / 100)),
+    )
 
     return () => {
-      window.clearInterval(intervalRef.current)
       window.clearInterval(progressRef.current)
+      window.clearTimeout(autoAdvanceRef.current)
     }
-  }, [currentIndex, goNext, isPaused])
+  }, [currentIndex, goNext, isPaused, isSectionVisible])
+
+  useEffect(() => {
+    const node = sectionRef.current
+    if (!node) return undefined
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsSectionVisible(entry.isIntersecting)
+
+        if (entry.isIntersecting && !hasActivatedRef.current) {
+          hasActivatedRef.current = true
+          progressValueRef.current = 0
+          setCurrentIndex(0)
+          setProgress(0)
+        }
+      },
+      {
+        threshold: 0.35,
+      },
+    )
+
+    observer.observe(node)
+
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     return () => {
-      window.clearInterval(intervalRef.current)
       window.clearInterval(progressRef.current)
+      window.clearTimeout(autoAdvanceRef.current)
       window.clearTimeout(transitionRef.current)
     }
   }, [])
@@ -138,7 +190,7 @@ export const ProjectsSection = forwardRef(function ProjectsSection(_, ref) {
   const currentProject = projects[currentIndex]
 
   return (
-    <section ref={ref} id="projects" className="projects-section section-frame snap-start">
+    <section ref={setSectionRef} id="projects" className="projects-section section-frame snap-start">
       <div className="projects-section-inner section-inner">
         <div className="content-wrap projects-content-wrap">
           <div className="projects-heading-row">

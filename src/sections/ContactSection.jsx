@@ -7,11 +7,10 @@ export const ContactSection = forwardRef(function ContactSection(_, ref) {
         <div className="content-wrap contact-layout">
           <div className="contact-copy">
             <p className="contact-eyebrow">Contact</p>
-            <h2>
-              Let’s talk about your next project
-            </h2>
+            <h2>Let's talk about your next project</h2>
             <p className="contact-intro">
-              Have a project in mind, need a new website, or want to explore a custom digital solution? We’d love to hear from you.
+              Have a project in mind, need a new website, or want to explore a custom digital
+              solution? We'd love to hear from you.
             </p>
 
             <div className="contact-details">
@@ -40,23 +39,23 @@ export const ContactSection = forwardRef(function ContactSection(_, ref) {
           <form className="contact-form">
             <div className="contact-form-grid">
               <label>
-                <span>First Name</span>
-                <input type="text" placeholder="Enter your first name..." />
+                <span>Name</span>
+                <input type="text" name="name" placeholder="Enter your name..." />
               </label>
               <label>
-                <span>Last Name</span>
-                <input type="text" placeholder="Enter your last name..." />
+                <span>Profession</span>
+                <input type="text" name="profession" placeholder="Enter your profession..." />
               </label>
             </div>
 
             <label>
               <span>Email</span>
-              <input type="email" placeholder="Enter your email address..." />
+              <input type="email" name="email" placeholder="Enter your email address..." />
             </label>
 
             <label>
               <span>How can we help you?</span>
-              <textarea rows="6" placeholder="Enter your message..." />
+              <textarea rows="6" name="message" placeholder="Enter your message..." />
             </label>
 
             <div className="contact-form-actions">

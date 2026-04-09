@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useRef, useState } from 'react'
 
 const processSteps = [
   {
@@ -38,38 +38,116 @@ const processSteps = [
 const AUTO_PLAY_DURATION = 5000
 
 export const ProcessSection = forwardRef(function ProcessSection(_, ref) {
+  const sectionRef = useRef(null)
+  const progressIntervalRef = useRef(null)
+  const hasActivatedRef = useRef(false)
+  const progressValueRef = useRef(0)
   const [activeIndex, setActiveIndex] = useState(0)
   const [direction, setDirection] = useState(1)
+  const [progress, setProgress] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
+  const [isSectionVisible, setIsSectionVisible] = useState(false)
+
+  const setSectionRef = useCallback(
+    (node) => {
+      sectionRef.current = node
+
+      if (typeof ref === 'function') {
+        ref(node)
+      } else if (ref) {
+        ref.current = node
+      }
+    },
+    [ref],
+  )
 
   const handleNext = useCallback(() => {
+    window.clearInterval(progressIntervalRef.current)
     setDirection(1)
+    progressValueRef.current = 0
+    setProgress(0)
     setActiveIndex((current) => (current + 1) % processSteps.length)
   }, [])
 
   const handlePrev = useCallback(() => {
+    window.clearInterval(progressIntervalRef.current)
     setDirection(-1)
+    progressValueRef.current = 0
+    setProgress(0)
     setActiveIndex((current) => (current - 1 + processSteps.length) % processSteps.length)
   }, [])
 
   const handleStepClick = (index) => {
     if (index === activeIndex) return
+    window.clearInterval(progressIntervalRef.current)
     setDirection(index > activeIndex ? 1 : -1)
+    progressValueRef.current = 0
+    setProgress(0)
     setActiveIndex(index)
     setIsPaused(false)
   }
 
   useEffect(() => {
-    if (isPaused) return undefined
+    window.clearInterval(progressIntervalRef.current)
 
-    const interval = window.setInterval(handleNext, AUTO_PLAY_DURATION)
-    return () => window.clearInterval(interval)
-  }, [handleNext, isPaused])
+    if (isPaused || !isSectionVisible) return undefined
+
+    progressIntervalRef.current = window.setInterval(() => {
+      const next = Math.min(progressValueRef.current + 100 / (AUTO_PLAY_DURATION / 50), 100)
+
+      if (next >= 100) {
+        window.clearInterval(progressIntervalRef.current)
+        progressValueRef.current = 0
+        setProgress(0)
+        setDirection(1)
+        setActiveIndex((current) => (current + 1) % processSteps.length)
+        return
+      }
+
+      progressValueRef.current = next
+      setProgress(next)
+    }, 50)
+
+    return () => {
+      window.clearInterval(progressIntervalRef.current)
+    }
+  }, [activeIndex, isPaused, isSectionVisible])
+
+  useEffect(() => {
+    const node = sectionRef.current
+    if (!node) return undefined
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsSectionVisible(entry.isIntersecting)
+
+        if (entry.isIntersecting && !hasActivatedRef.current) {
+          hasActivatedRef.current = true
+          progressValueRef.current = 0
+          setActiveIndex(0)
+          setProgress(0)
+        }
+      },
+      {
+        threshold: 0.35,
+      },
+    )
+
+    observer.observe(node)
+
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      window.clearInterval(progressIntervalRef.current)
+    }
+  }, [])
 
   const activeStep = processSteps[activeIndex]
 
   return (
-    <section ref={ref} id="process" className="process-section section-frame snap-start">
+    <section ref={setSectionRef} id="process" className="process-section section-frame snap-start">
       <div className="process-inner">
         <div className="process-content">
           <div className="process-copy">
@@ -90,7 +168,12 @@ export const ProcessSection = forwardRef(function ProcessSection(_, ref) {
                     className={`process-tab ${isActive ? 'process-tab-active' : ''}`}
                   >
                     <span className="process-tab-progress">
-                      {isActive ? <span className="process-tab-progress-fill" /> : null}
+                      {isActive ? (
+                        <span
+                          className="process-tab-progress-fill"
+                          style={{ transform: `scaleY(${progress / 100})` }}
+                        />
+                      ) : null}
                     </span>
                     <span className="process-tab-id">/{step.id}</span>
                     <span className="process-tab-body">
